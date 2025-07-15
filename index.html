@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StoryForge</title>
+  <script src="https://cdn.tailwindcss.com "></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center py-12 px-4">
+  <h1 class="text-5xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">StoryForge</h1>
+  <p class="text-lg text-gray-300 mb-10 max-w-xl text-center">Enter your cast and theme below, and let the magic unfold.</p>
+
+  <div class="w-full max-w-3xl space-y-6">
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-2">Cast Members (One per line)</label>
+      <textarea id="cast" rows="4"
+        class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+        placeholder="e.g., Alice - Brave leader, Bob - Genius hacker, Clara - Mysterious spy"></textarea>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-2">Theme or Genre</label>
+      <input id="theme" type="text"
+        class="w-full p-4 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+        placeholder="e.g., zombie apocalypse, cyberpunk rebellion, Hunger Games-style arena" />
+    </div>
+
+    <button onclick="generateStory()"
+      class="mt-4 w-full py-3 px-6 rounded-lg text-white font-semibold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition duration-200">
+      Generate Story
+    </button>
+
+    <div id="story-output" class="hidden mt-12 w-full max-w-3xl bg-gray-800 p-6 rounded-lg shadow-lg fade-in">
+      <h2 class="text-2xl font-bold mb-4">Your Generated Story</h2>
+      <div id="story-content" class="whitespace-pre-wrap text-gray-200 leading-relaxed"></div>
+      <div class="mt-6 flex gap-4">
+        <button onclick="downloadPDF()" class="py-2 px-4 bg-blue-600 hover:bg-blue-700 rounded text-white">Download PDF</button>
+        <button onclick="saveStory()" class="py-2 px-4 bg-green-600 hover:bg-green-700 rounded text-white">Save Story</button>
+      </div>
+    </div>
+
+    <div id="saved-stories" class="mt-10"></div>
+  </div>
+
+  <script>
+    function generateStory() {
+      const cast = document.getElementById("cast").value.trim();
+      const theme = document.getElementById("theme").value.trim();
+
+      if (!cast || !theme) return alert("Please enter both cast and theme!");
+
+      const lines = cast.split("\\n");
+      const characters = lines.map(line => "- " + line).join("\\n");
+
+      const story = `
+Once upon a time in a world ruled by ${theme}, six unlikely heroes rose from the ashes of their broken pasts.
+
+${characters}
+
+In a land where danger lurked around every corner, they banded together—not just for survival, but for hope. Romance bloomed between two of them, while another struggled with betrayal from within. As enemies closed in, only one question remained: would they survive the night?
+
+And so began the legend of the ${theme}...
+      `.trim();
+
+      document.getElementById("story-content").textContent = story;
+      document.getElementById("story-output").classList.remove("hidden");
+    }
+
+    function downloadPDF() {
+      const win = window.open('', '', 'height=700,width=700');
+      win.document.write('<html><head><title>StoryForge</title>');
+      win.document.write(`<style>
+        body { font-family: Arial; padding: 40px; }
+        h1, h2, h3 { color: #3b82f6; }
+        ul, li { margin-left: 20px; }
+        p { line-height: 1.6; }
+      </style>`);
+      win.document.write('</head><body>');
+      win.document.write(`<h1>StoryForge Generated Story</h1>`);
+      win.document.write(`<h2>Theme: ${document.getElementById("theme").value}</h2>`);
+      win.document.write(`<ul>${document.getElementById("cast").value.split("\\n").map(c => `<li>${c}</li>`).join("")}</ul>`);
+      win.document.write(`<p>${document.getElementById("story-content").innerText.replace(/\\n/g, "<br>")}</p>`);
+      win.document.write('</body></html>');
+      win.document.close();
+      win.focus();
+      win.print();
+      win.close();
+    }
+
+    function saveStory() {
+      const saved = JSON.parse(localStorage.getItem("stories") || "[]");
+      const newStory = {
+        cast: document.getElementById("cast").value,
+        theme: document.getElementById("theme").value,
+        story: document.getElementById("story-content").innerText,
+        date: new Date().toLocaleString()
+      };
+      saved.push(newStory);
+      localStorage.setItem("stories", JSON.stringify(saved));
+      loadSavedStories();
+    }
+
+    function loadSavedStories() {
+      const saved = JSON.parse(localStorage.getItem("stories") || "[]");
+      const container = document.getElementById("saved-stories");
+      container.innerHTML = "";
+      
+      saved.forEach((s, idx) => {
+        container.innerHTML += \`
+          <div class="bg-gray-800 p-4 rounded-md mb-4">
+            <p class="text-sm text-gray-400">\${s.date}</p>
+            <h3 class="font-semibold">\${s.theme}</h3>
+            <ul class="list-disc ml-5 mt-1">
+              \${s.cast.split("\\n").map(c => \`<li>\${c}</li>\`).join("")}
+            </ul>
+            <p class="mt-2 text-sm truncate">\${s.story.slice(0, 100)}...</p>
+          </div>
+        \`;
+      });
+    }
+  </script>
+</body>
+</html>
